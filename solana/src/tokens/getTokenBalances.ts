@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import { Address, toPublicKey } from '../parse/types';
 import { parseTokenAccount } from '../parse/structs';
 import { getMultipleAccounts } from '../accounts/getMultipleAccounts';
+import { getDecimalsAsMap } from './getDecimals';
 import { getAssociatedTokenAddress } from './ata';
 import { TOKEN_PROGRAM_IDS } from './constants';
 
@@ -69,4 +70,32 @@ export async function getTokenBalances(
   });
 
   return balances;
+}
+
+/**
+ * The decimals-adjusted (UI) balance an owner holds of a single SPL mint, or
+ * `0` if there is no account. Resolves the balance across both token programs
+ * and the mint's decimals in batched reads.
+ *
+ * SPL-only: native SOL is not handled here — callers that need a native-SOL
+ * balance should special-case it with `connection.getBalance`.
+ */
+export async function getTokenUiBalance(
+  connection: Connection,
+  owner: Address,
+  mint: Address
+): Promise<number> {
+  const mintStr = mint.toString();
+  const [balances, decimalsByMint] = await Promise.all([
+    getTokenBalances(connection, owner, [mint]),
+    getDecimalsAsMap(connection, [mint]),
+  ]);
+
+  const balance = balances.get(mintStr);
+  if (!balance) return 0;
+
+  const decimals = decimalsByMint.get(mintStr);
+  if (decimals === undefined) return 0;
+
+  return balance.amount.shiftedBy(-decimals).toNumber();
 }
