@@ -1,9 +1,10 @@
 # jupiter-library
 
-A **simplicity layer for Jupiter's APIs**. Two jobs, nothing more:
+A **simplicity layer for Jupiter's APIs**. A few jobs, nothing more:
 
-> Fetch token **prices** (`/price/v3`) and token **information** (`/tokens/v2/*`),
-> with clean batched functions over a thin HTTP client.
+> Fetch token **prices** (`/price/v3`), token **information** (`/tokens/v2/*`),
+> and **price history** (`/v2/charts`), with clean batched functions over a thin
+> HTTP client.
 
 There is **no** retry/failover/rate-limiting layer (Jupiter's rate limits are
 your API tier's concern), no caching, no codegen. Just clean, composable
@@ -28,7 +29,8 @@ npm run smoke         # optional live read against the free Jupiter API
 
 ## Free vs. Pro host
 
-Jupiter exposes two hosts. The client picks the right one automatically:
+Jupiter exposes two hosts for price/token calls. The client picks the right one
+automatically:
 
 | Host                  | When                          | Auth                |
 |-----------------------|-------------------------------|---------------------|
@@ -39,6 +41,10 @@ Jupiter exposes two hosts. The client picks the right one automatically:
 createJupiterClient();                       // free host
 createJupiterClient({ apiKey: 'jup_...' });  // Pro host, or set JUPITER_API_KEY
 ```
+
+Price history lives on a **third host** (`datapi.jup.ag`) that doesn't share the
+client's routing, so `getChart` is self-contained — it takes a mint directly and
+needs no client (see below).
 
 ## Conventions
 
@@ -60,6 +66,7 @@ import {
   getToken,
   getTokensByTag,
   getTrendingTokens,
+  getChart,
 } from 'jupiter-library';
 
 const client = createJupiterClient(); // free host unless JUPITER_API_KEY is set
@@ -77,6 +84,14 @@ jup?.holderCount;   // number | null
 // Curated lists:
 const lsts = await getTokensByTag(client, 'lst');
 const hot = await getTrendingTokens(client, 'toptrending', '24h');
+
+// Price history — no client needed (separate host). Defaults to the last
+// 30 daily candles. Candles come back ascending by time (oldest first):
+const candles = await getChart(SOL_MINT);
+candles.at(-1)?.close; // most recent close
+
+// Or customise the window:
+const hourly = await getChart(SOL_MINT, { interval: '1_HOUR', candles: 24 });
 ```
 
 ## API
@@ -100,6 +115,26 @@ const hot = await getTrendingTokens(client, 'toptrending', '24h');
 | `getTokensByTag(client, tag)`            | `tag`                 | `TokenInfo[]` — `'verified'` \| `'lst'` |
 | `getTrendingTokens(client, cat, intvl)`  | `{category}/{interval}` | `TokenInfo[]` — cat: `toptrending` \| `toptraded` \| `toporganicscore`; interval: `5m` \| `1h` \| `6h` \| `24h` |
 | `getRecentTokens(client)`                | `recent`              | `TokenInfo[]` |
+
+### Price history (`/v2/charts` on `datapi.jup.ag`)
+
+`getChart` is **client-free** — it takes a mint and talks to `datapi.jup.ag`
+directly. Candles are returned **ascending by time** (oldest first); timestamps
+are in **milliseconds**, and candles with a non-positive close are dropped.
+
+| Function | Returns |
+|----------|---------|
+| `getChart(mint, options?)` | `Candle[]` — `{ timestamp, open, high, low, close, volume? }` |
+
+`options` (all optional, defaulting to the last 30 daily USD price candles):
+
+| Option | Type | Default | Notes |
+|--------|------|---------|-------|
+| `interval` | `1_MINUTE` \| `5_MINUTE` \| `15_MINUTE` \| `30_MINUTE` \| `1_HOUR` \| `4_HOUR` \| `1_DAY` \| `1_WEEK` | `1_DAY` | candle width |
+| `candles`  | `number` | `30` | number of candles |
+| `type`     | `price` \| `mcap` | `price` | what candles measure |
+| `quote`    | `usd` | `usd` | quote currency |
+| `to`       | `number` | `Date.now()` | window upper bound, unix **ms** |
 
 ## Environment variables
 

@@ -44,3 +44,17 @@ export {
   type TrendingCategory,
   type TrendingInterval,
 } from './tokens/types';
+
+// Price history / charts (note: a separate host, `datapi.jup.ag` — no client)
+export {
+  getChart,
+  type GetChartOptions,
+} from './charts/getChart';
+export {
+  type Candle,
+  type RawCandle,
+  type ChartInterval,
+  type ChartType,
+  type ChartQuote,
+  type GetChartResponse,
+} from './charts/types';
