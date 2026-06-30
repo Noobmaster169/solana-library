@@ -1,0 +1,31 @@
+{
+  "name": "meteora-library",
+  "version": "0.1.0",
+  "description": "A simplicity layer for reading Meteora DLMM on-chain data: decode positions, pools, and bins, and compute amounts, fees, and rewards. Built on solana-library.",
+  "type": "commonjs",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "smoke": "tsx examples/smoke.ts"
+  },
+  "keywords": [
+    "solana",
+    "meteora",
+    "dlmm",
+    "liquidity-book",
+    "defi"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@solana/web3.js": "^1.98.0",
+    "bignumber.js": "^9.1.2",
+    "solana-library": "file:../solana",
+    "jupiter-library": "file:../jupiter"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.4.0"
+  }
+}
