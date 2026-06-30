@@ -18,7 +18,12 @@ export {
   getAllLbPairs,
   type GetAllLbPairsOptions,
 } from './getPools';
-export { getActiveBin, getActiveBinPrice, type ActiveBin } from './getActiveBin';
+export {
+  getActiveBin,
+  getActiveBinPrice,
+  type ActiveBin,
+  type ActiveBinOptions,
+} from './getActiveBin';
 
 // ── Optional USD valuation (Jupiter) ───────────────────────────────────────
 export { attachUsdValues, type DlmmPositionValued } from './pricing';

@@ -38,8 +38,13 @@ export type GetAllLbPairsOptions = {
 };
 
 /**
- * Every pool owned by the DLMM program. This is a large scan — pass
- * `maxAccounts` to guard against pulling the entire set unintentionally.
+ * Every pool owned by the DLMM program — a full `getProgramAccounts` scan that
+ * downloads tens of thousands of accounts at ~900 bytes each.
+ *
+ * This is a heavy, explicit power-tool, not something to call per request: many
+ * RPC providers rate-limit or reject unfiltered `getProgramAccounts`. Always
+ * pass `maxAccounts` as a guard, and prefer `getLbPairs(addresses)` when you
+ * already know which pools you care about.
  */
 export function getAllLbPairs(
   connection: Connection,

@@ -207,7 +207,14 @@ async function valuePositions(
 
     const decimalsX = decimalsByMint.get(lbPair.tokenXMint.toBase58());
     const decimalsY = decimalsByMint.get(lbPair.tokenYMint.toBase58());
-    if (decimalsX === undefined || decimalsY === undefined) continue;
+    if (decimalsX === undefined || decimalsY === undefined) {
+      // Decimals must exist for a real pool; a miss means an RPC/state problem.
+      // Fail loud rather than silently dropping the position from a portfolio.
+      throw new Error(
+        `DLMM: token decimals not found for pool ${position.lbPair.toBase58()} ` +
+          `(mints ${lbPair.tokenXMint.toBase58()} / ${lbPair.tokenYMint.toBase58()})`
+      );
+    }
 
     const data = processPosition(
       lbPair,

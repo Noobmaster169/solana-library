@@ -1,9 +1,9 @@
-import { Connection, PublicKey } from '@solana/web3.js';
+import { AccountInfo, Connection, PublicKey } from '@solana/web3.js';
 import BigNumber from 'bignumber.js';
 import {
   type Address,
+  getMultipleAccountsInfo,
   getParsedAccountInfo,
-  getParsedMultipleAccountInfo,
   parseMintAccount,
   toPublicKey,
 } from 'solana-library';
@@ -19,6 +19,11 @@ import {
 // ---------------------------------------------------------------------------
 // Active bin & price. The active bin is the one currently being traded; its id
 // drives the pool's spot price via (1 + binStep/10000) ^ binId.
+//
+// Token decimals only affect `pricePerToken` (a cosmetic rescale). They never
+// change, so callers that already know them can pass them in to skip the mint
+// reads entirely. Otherwise the mints are fetched in the *same* batch as the
+// bin array — never as separate round-trips.
 // ---------------------------------------------------------------------------
 
 export type ActiveBin = {
@@ -33,51 +38,78 @@ export type ActiveBin = {
   supply: BigNumber;
 };
 
-/** Spot price per token implied by a pool's active bin (no bin fetch needed). */
-export async function getActiveBinPrice(
-  connection: Connection,
-  lbPairAddress: Address
-): Promise<{ binId: number; price: string; pricePerToken: string } | null> {
-  const lbPair = await getParsedAccountInfo(connection, parseLbPair, lbPairAddress);
-  if (!lbPair) return null;
-  return priceFromLbPair(lbPair, lbPair.tokenXMint, await decimalsDelta(connection, lbPair));
+export type ActiveBinOptions = {
+  programId?: PublicKey;
+  /** Pass known token decimals to skip the mint-account reads. */
+  decimalsX?: number;
+  decimalsY?: number;
+};
+
+/** Read a mint's decimals, or throw — never silently assume 0. */
+function mintDecimals(
+  info: AccountInfo<Buffer> | null,
+  mint: PublicKey
+): number {
+  if (!info) {
+    throw new Error(
+      `DLMM: could not read token decimals — mint account ${mint.toBase58()} was not found`
+    );
+  }
+  return parseMintAccount(info.data).decimals;
 }
 
-async function decimalsDelta(
-  connection: Connection,
-  lbPair: LbPair
-): Promise<number> {
-  const [x, y] = await getParsedMultipleAccountInfo(connection, parseMintAccount, [
-    lbPair.tokenXMint,
-    lbPair.tokenYMint,
-  ]);
-  const decimalsX = x?.decimals ?? 0;
-  const decimalsY = y?.decimals ?? 0;
-  return decimalsX - decimalsY;
-}
-
-function priceFromLbPair(
+function priceStrings(
   lbPair: LbPair,
-  _tokenXMint: PublicKey,
-  decimalsDeltaValue: number
+  decimalsX: number,
+  decimalsY: number
 ): { binId: number; price: string; pricePerToken: string } {
   const price = getPriceOfBinByBinId(lbPair.binStep, lbPair.activeId);
   const pricePerToken = new BigNumber(price)
-    .times(new BigNumber(10).pow(decimalsDeltaValue))
+    .times(new BigNumber(10).pow(decimalsX - decimalsY))
     .toString();
   return { binId: lbPair.activeId, price, pricePerToken };
 }
 
 /**
- * The full active bin of a pool: its id, price, and current X/Y liquidity.
- * Returns `null` if the pool or its active bin array is missing.
+ * Spot price of a pool's active bin. Costs **1 RPC** when `decimalsX`/`decimalsY`
+ * are supplied, otherwise 2 (one extra batched read for the two mints).
+ */
+export async function getActiveBinPrice(
+  connection: Connection,
+  lbPairAddress: Address,
+  options: Pick<ActiveBinOptions, 'decimalsX' | 'decimalsY'> = {}
+): Promise<{ binId: number; price: string; pricePerToken: string } | null> {
+  const lbPair = await getParsedAccountInfo(connection, parseLbPair, lbPairAddress);
+  if (!lbPair) return null;
+
+  let { decimalsX, decimalsY } = options;
+  if (decimalsX === undefined || decimalsY === undefined) {
+    const [x, y] = await getMultipleAccountsInfo(connection, [
+      lbPair.tokenXMint,
+      lbPair.tokenYMint,
+    ]);
+    decimalsX = mintDecimals(x, lbPair.tokenXMint);
+    decimalsY = mintDecimals(y, lbPair.tokenYMint);
+  }
+
+  return priceStrings(lbPair, decimalsX, decimalsY);
+}
+
+/**
+ * The full active bin of a pool: id, price, and current X/Y liquidity.
+ *
+ * Costs **2 RPC** total: one for the pool, then a single batched read for the
+ * active bin array (and the two mints, unless decimals are supplied). Returns
+ * `null` if the pool or its active bin array is missing.
  */
 export async function getActiveBin(
   connection: Connection,
   lbPairAddress: Address,
-  programId: PublicKey = DLMM_PROGRAM_ID
+  options: ActiveBinOptions = {}
 ): Promise<ActiveBin | null> {
+  const programId = options.programId ?? DLMM_PROGRAM_ID;
   const lbPairPk = toPublicKey(lbPairAddress);
+
   const lbPair = await getParsedAccountInfo(connection, parseLbPair, lbPairPk);
   if (!lbPair) return null;
 
@@ -86,20 +118,28 @@ export async function getActiveBin(
     binIdToBinArrayIndex(lbPair.activeId),
     programId
   );
-  const [binArray, mintX, mintY] = await Promise.all([
-    getParsedAccountInfo(connection, parseBinArray, binArrayKey),
-    getParsedAccountInfo(connection, parseMintAccount, lbPair.tokenXMint),
-    getParsedAccountInfo(connection, parseMintAccount, lbPair.tokenYMint),
-  ]);
-  if (!binArray) return null;
+
+  // Single batched read: bin array first, then the mints only if needed.
+  const needMints =
+    options.decimalsX === undefined || options.decimalsY === undefined;
+  const keys = needMints
+    ? [binArrayKey, lbPair.tokenXMint, lbPair.tokenYMint]
+    : [binArrayKey];
+  const infos = await getMultipleAccountsInfo(connection, keys);
+
+  const binArrayInfo = infos[0];
+  if (!binArrayInfo) return null;
+  const binArray = parseBinArray(binArrayInfo.data);
+
+  const decimalsX = needMints
+    ? mintDecimals(infos[1], lbPair.tokenXMint)
+    : (options.decimalsX as number);
+  const decimalsY = needMints
+    ? mintDecimals(infos[2], lbPair.tokenYMint)
+    : (options.decimalsY as number);
 
   const bin = getBinFromBinArray(lbPair.activeId, binArray);
-  const decimalsDeltaValue = (mintX?.decimals ?? 0) - (mintY?.decimals ?? 0);
-  const { price, pricePerToken } = priceFromLbPair(
-    lbPair,
-    lbPair.tokenXMint,
-    decimalsDeltaValue
-  );
+  const { price, pricePerToken } = priceStrings(lbPair, decimalsX, decimalsY);
 
   return {
     lbPair: lbPairPk,
