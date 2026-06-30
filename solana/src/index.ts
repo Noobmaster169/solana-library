@@ -36,17 +36,17 @@ export {
 } from './parse/structs';
 export { anchorSighash } from './parse/anchorSighash';
 
-// Account fetching
-export { getMultipleAccounts } from './accounts/getMultipleAccounts';
-export {
-  getParsedAccount,
-  getParsedAccounts,
-} from './accounts/getParsedAccounts';
+// Account fetching — individual + multiple, raw + parsed
+export { getMultipleAccountsInfo } from './accounts/getMultipleAccountsInfo';
+export { getParsedAccountInfo } from './accounts/getParsedAccountInfo';
+export { getParsedMultipleAccountInfo } from './accounts/getParsedMultipleAccountInfo';
 export {
   getProgramAccounts,
-  getParsedProgramAccounts,
   type GetProgramAccountsOptions,
 } from './accounts/getProgramAccounts';
+export { getProgramAccount } from './accounts/getProgramAccount';
+export { getParsedProgramAccounts } from './accounts/getParsedProgramAccounts';
+export { getParsedProgramAccount } from './accounts/getParsedProgramAccount';
 export { dataSizeFilter, memcmpFilter } from './accounts/filters';
 
 // Tokens

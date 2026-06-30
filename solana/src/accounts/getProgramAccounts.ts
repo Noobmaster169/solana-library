@@ -2,9 +2,8 @@ import {
   Commitment,
   Connection,
   GetProgramAccountsFilter,
-  PublicKey,
 } from '@solana/web3.js';
-import { Address, Parser, ParsedAccount, toPublicKey } from '../parse/types';
+import { Address, toPublicKey } from '../parse/types';
 
 export type GetProgramAccountsOptions = {
   filters?: GetProgramAccountsFilter[];
@@ -52,22 +51,4 @@ export async function getProgramAccounts(
   }
 
   return connection.getProgramAccounts(programPk, config);
-}
-
-/** `getProgramAccounts` + parsing into `ParsedAccount<T>[]`. */
-export async function getParsedProgramAccounts<T>(
-  connection: Connection,
-  parse: Parser<T>,
-  programId: Address,
-  options: GetProgramAccountsOptions = {}
-): Promise<ParsedAccount<T>[]> {
-  const accountsRes = await getProgramAccounts(connection, programId, options);
-  return accountsRes.map(
-    (accountRes) =>
-      ({
-        pubkey: accountRes.pubkey as PublicKey,
-        lamports: accountRes.account.lamports,
-        ...parse(accountRes.account.data),
-      } as ParsedAccount<T>)
-  );
 }

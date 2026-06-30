@@ -15,7 +15,7 @@ const MAX_ACCOUNTS_PER_CALL = 100;
  * `result[i]` is the account for `addresses[i]`, or `null` if it does not
  * exist. Order is never reshuffled.
  */
-export async function getMultipleAccounts(
+export async function getMultipleAccountsInfo(
   connection: Connection,
   addresses: Address[],
   commitmentOrConfig?: Commitment | GetMultipleAccountsConfig

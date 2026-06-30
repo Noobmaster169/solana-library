@@ -2,7 +2,7 @@ import { Connection } from '@solana/web3.js';
 import BigNumber from 'bignumber.js';
 import { Address } from '../parse/types';
 import { parseMintAccount } from '../parse/structs';
-import { getParsedAccount } from '../accounts/getParsedAccounts';
+import { getParsedAccountInfo } from '../accounts/getParsedAccountInfo';
 import { NATIVE_SOL_MINT, WRAPPED_SOL_MINT } from './constants';
 
 /**
@@ -18,7 +18,11 @@ export async function getSupply(
   const mintStr = mint.toString();
   if (mintStr === NATIVE_SOL_MINT || mintStr === WRAPPED_SOL_MINT) return null;
 
-  const mintAccount = await getParsedAccount(connection, parseMintAccount, mint);
+  const mintAccount = await getParsedAccountInfo(
+    connection,
+    parseMintAccount,
+    mint
+  );
   return mintAccount
     ? mintAccount.supply.div(10 ** mintAccount.decimals)
     : null;

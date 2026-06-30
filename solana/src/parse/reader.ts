@@ -42,6 +42,13 @@ export class BufferReader {
     return v;
   }
 
+  /** Signed 32-bit, little-endian. Fits safely in a JS number. */
+  i32(): number {
+    const v = this.buf.readInt32LE(this.offset);
+    this.offset += 4;
+    return v;
+  }
+
   // --- wide integers -> BigNumber ---
   u64(): BigNumber {
     return this.unsigned(8);

@@ -2,7 +2,7 @@ import { Connection } from '@solana/web3.js';
 import BigNumber from 'bignumber.js';
 import { Address, toPublicKey } from '../parse/types';
 import { parseTokenAccount } from '../parse/structs';
-import { getMultipleAccounts } from '../accounts/getMultipleAccounts';
+import { getMultipleAccountsInfo } from '../accounts/getMultipleAccountsInfo';
 import { getDecimalsAsMap } from './getDecimals';
 import { getAssociatedTokenAddress } from './ata';
 import { TOKEN_PROGRAM_IDS } from './constants';
@@ -24,7 +24,7 @@ export type TokenBalance = {
  *
  * For each mint the ATA is derived under both the legacy Token program and
  * Token-2022, and all candidates are resolved with one chunked
- * `getMultipleAccounts` call — so the caller never needs to know which program
+ * `getMultipleAccountsInfo` call — so the caller never needs to know which program
  * a mint belongs to. Whichever account exists wins.
  *
  * Returns a map keyed by mint address. Mints with no account (or a zero
@@ -49,7 +49,7 @@ export async function getTokenBalances(
     }))
   );
 
-  const accountsInfo = await getMultipleAccounts(
+  const accountsInfo = await getMultipleAccountsInfo(
     connection,
     candidates.map((c) => c.address)
   );

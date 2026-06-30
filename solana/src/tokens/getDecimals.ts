@@ -1,7 +1,7 @@
 import { Connection } from '@solana/web3.js';
 import { Address } from '../parse/types';
 import { parseMintAccount } from '../parse/structs';
-import { getParsedAccounts } from '../accounts/getParsedAccounts';
+import { getParsedMultipleAccountInfo } from '../accounts/getParsedMultipleAccountInfo';
 import { NATIVE_SOL_MINT, SOL_DECIMALS, WRAPPED_SOL_MINT } from './constants';
 
 /**
@@ -26,7 +26,7 @@ export async function getDecimalsAsMap(
   });
 
   const addresses = Array.from(toFetch);
-  const mintAccounts = await getParsedAccounts(
+  const mintAccounts = await getParsedMultipleAccountInfo(
     connection,
     parseMintAccount,
     addresses
