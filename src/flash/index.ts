@@ -32,7 +32,7 @@ export {
   ER_ENDPOINT,
   DEFAULT_CLUSTER,
   DEFAULT_POOL_NAME,
-  SEEDS,
+  BASKET_SEED,
   type Cluster,
 } from './constants';
 

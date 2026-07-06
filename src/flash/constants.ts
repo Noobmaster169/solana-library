@@ -1,27 +1,26 @@
 import { PublicKey } from '@solana/web3.js';
-import {
-  PROGRAM_ID as SDK_PROGRAM_ID,
-  SEEDS,
-  type Cluster,
-} from '@flash_trade/flash-sdk-v2';
 
 // ---------------------------------------------------------------------------
-// Shared Flash Trade V2 protocol constants.
+// Shared Flash Trade V2 protocol constants — hardcoded, no SDK dependency.
 //
 // Flash settles trading on a MagicBlock **ephemeral rollup (ER)**: a wallet's
 // positions/orders live in a per-owner **Basket** account that is delegated to
 // an ER validator, so anything position-related is read from (and written to)
 // the ER RPC — separate from the base `SOLANA_RPC`.
 //
-// Program ids, PDA seeds, and the pool registry ship inside the SDK
-// (`PoolConfig.json`); we re-export the pieces callers need so the rest of the
-// module never reaches into the SDK for a constant.
+// The on-chain read path (accounts/) derives PDAs and decodes account bytes
+// itself from these constants; the SDK is only pulled in for the write/quote
+// paths where its instruction assembly and pool math are load-bearing.
 // ---------------------------------------------------------------------------
 
-export type { Cluster };
+/** Clusters the module supports. */
+export type Cluster = 'mainnet-beta' | 'devnet';
 
-/** Perpetuals program id per cluster (resolved from the SDK's PoolConfig.json). */
-export const PROGRAM_ID: Record<Cluster, PublicKey> = SDK_PROGRAM_ID;
+/** Perpetuals program id per cluster. */
+export const PROGRAM_ID: Record<Cluster, PublicKey> = {
+  'mainnet-beta': new PublicKey('FLASH6Lo6h3iasJKWDs2F8TkW2UKf3s15C8PMGuVfgBn'),
+  devnet: new PublicKey('FTPP4jEWW1n8s2FEccwVfS9KCPjpndaswg7Nkkuz4ER4'),
+};
 
 /** Default cluster for the module. Mainnet is where Flash's real markets live. */
 export const DEFAULT_CLUSTER: Cluster = 'mainnet-beta';
@@ -38,5 +37,5 @@ export const ER_ENDPOINT: Record<Cluster, string> = {
 /** Default trading pool. Flash's mainnet markets live under "Crypto.1". */
 export const DEFAULT_POOL_NAME = 'Crypto.1';
 
-/** PDA seeds, re-exported from the SDK so derive helpers have one source. */
-export { SEEDS };
+/** PDA seed for the per-owner Basket account (`['basket', owner]`). */
+export const BASKET_SEED = 'basket';

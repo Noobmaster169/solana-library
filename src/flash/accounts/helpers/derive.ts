@@ -1,20 +1,29 @@
 import { PublicKey } from '@solana/web3.js';
 import BigNumber from 'bignumber.js';
-import type { BN } from '@coral-xyz/anchor';
-import {
-  findBasketAddress,
-  findMarketAddress,
-} from '@flash_trade/flash-sdk-v2';
 import { getMarkets, type FlashMarket } from '../../markets';
-import { DEFAULT_CLUSTER, DEFAULT_POOL_NAME, type Cluster } from '../../constants';
+import {
+  BASKET_SEED,
+  DEFAULT_CLUSTER,
+  DEFAULT_POOL_NAME,
+  PROGRAM_ID,
+  type Cluster,
+} from '../../constants';
 
 // ---------------------------------------------------------------------------
-// PDA derivation + small decode helpers shared by the account readers.
-// PDAs come straight from the SDK (single source of truth for seeds/bumps).
+// PDA derivation + small decode helpers for the on-chain read path — no SDK.
 // ---------------------------------------------------------------------------
 
-/** The per-owner Basket PDA (holds all positions + orders). */
-export { findBasketAddress, findMarketAddress };
+/** The per-owner Basket PDA (`['basket', owner]`), holding all positions + orders. */
+export function deriveBasketAddress(
+  owner: PublicKey,
+  cluster: Cluster = DEFAULT_CLUSTER
+): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync(
+    [Buffer.from(BASKET_SEED), owner.toBuffer()],
+    PROGRAM_ID[cluster]
+  );
+  return pda;
+}
 
 /** Coerce a base58 string or PublicKey to a PublicKey. */
 export function toPublicKey(value: string | PublicKey): PublicKey {
@@ -31,16 +40,16 @@ export function marketByAccount(
   return map;
 }
 
-/** A fixed-point BN with `decimals` places → a JS number (via BigNumber). */
-export function bnToNumber(value: BN, decimals: number): number {
+/** A fixed-point value (BN or BigNumber) with `decimals` places → a JS number. */
+export function bnToNumber(value: { toString(): string }, decimals: number): number {
   return new BigNumber(value.toString()).shiftedBy(-decimals).toNumber();
 }
 
-/** An on-chain OraclePrice `{ price, exponent }` → a JS number.
- *  `exponent` may decode as a BN or a plain number depending on the source. */
+/** An OraclePrice `{ price, exponent }` → a JS number.
+ *  `price` may be a BN/BigNumber; `exponent` a plain number or a BN. */
 export function oraclePriceToNumber(op: {
-  price: BN | number | string;
-  exponent: BN | number;
+  price: { toString(): string };
+  exponent: number | { toNumber(): number };
 }): number {
   const exponent =
     typeof op.exponent === 'number' ? op.exponent : op.exponent.toNumber();

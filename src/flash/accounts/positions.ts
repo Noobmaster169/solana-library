@@ -1,21 +1,19 @@
 import { PublicKey } from '@solana/web3.js';
-import { USD_DECIMALS } from '@flash_trade/flash-sdk-v2';
 import type { FlashClient } from '../client/client';
 import { getBasket } from './getBasket';
-import {
-  bnToNumber,
-  marketByAccount,
-  oraclePriceToNumber,
-} from './helpers/derive';
+import { bnToNumber, marketByAccount, oraclePriceToNumber } from './helpers/derive';
 
 // ---------------------------------------------------------------------------
-// Normalized positions + orders for a wallet.
+// Normalized positions for a wallet.
 //
-// `getBasket` gives the raw account; these turn its `positions`/`orders` into
+// `getBasket` gives the raw decoded account; this turns its `positions` into
 // flat, human-readable objects (symbols, USD, leverage) using market metadata
 // already in memory — no extra RPC. PnL and liquidation price need oracle/pool
 // math and live in the `views/` layer instead.
 // ---------------------------------------------------------------------------
+
+/** Position sizes/collateral are denominated in USD with 6 decimals on-chain. */
+const USD_DECIMALS = 6;
 
 export interface FlashPosition {
   /** On-chain market account this position belongs to. */
@@ -67,7 +65,7 @@ export async function getPositions(
       collateralUsd,
       entryPrice: oraclePriceToNumber(p.entryPrice),
       leverage: collateralUsd > 0 ? sizeUsd / collateralUsd : 0,
-      openTime: p.openTime.toNumber(),
+      openTime: p.openTime,
     });
   }
 
