@@ -1,25 +1,28 @@
 # solana-defi-library
 
-One combined **simplicity layer** for reading Solana protocols. Three modules
-that were previously separate packages, now a single install with one clean,
-per-module structure — plus a **script harness** to exercise any feature against
-a live RPC.
+One combined **simplicity layer** for Solana protocols. Four modules with one
+clean, per-module structure — plus a **script harness** to exercise any feature
+against a live RPC.
 
 ```
 src/
   solana/    core query layer  — accounts, parsing, tokens, DAS      (base)
   jupiter/   Jupiter API reads — price, tokens, charts               (base)
   meteora/   Meteora DLMM      — positions, pools, bins   (built on the two above)
+  flash/     Flash Trade V2    — perps: markets, positions, quotes, open/close
   index.ts   namespaced barrel
 scripts/     runnable feature scripts (the test harness)
 ```
 
 Each module keeps its own deep docs: [`src/solana`](src/solana/README.md) ·
-[`src/jupiter`](src/jupiter/README.md) · [`src/meteora`](src/meteora/README.md).
+[`src/jupiter`](src/jupiter/README.md) · [`src/meteora`](src/meteora/README.md) ·
+[`src/flash`](src/flash/README.md).
 
 The philosophy is unchanged: **no** retry/rate-limiting layer, no caching, no
 codegen — just clean, composable, copy-pasteable functions over `@solana/web3.js`
-v1. It stays a source library (`tsx`/`noEmit`, no build step).
+v1. It stays a source library (`tsx`/`noEmit`, no build step). The `flash` module
+is the one hybrid: it reads the house way but wraps the official Flash SDK for
+the trade/write path, where its oracle and pool math are genuinely needed.
 
 ## Install
 
@@ -104,6 +107,24 @@ npm run script meteora/active-bin 5rCf1DM8LjKTw4YqhnoLcngyZYeNnQqztScTogYHAS6
 npm run script meteora/positions <yourWallet>
 ```
 
+#### `flash/*` — Flash Trade V2 (perps)
+
+| Script | Parameters | Description |
+|---|---|---|
+| `flash/markets` | — | List Flash markets + token USD prices (no wallet). |
+| `flash/quote` | `[target] [side] [amountIn] [leverage]` | Quote opening a position: entry, liquidation, size, fees. Default: `SOL long 1 2`. |
+| `flash/positions` | `<owner>` | **Required owner.** A wallet's open Flash positions. |
+| `flash/open-position` | `<target> <side> <collateral> <leverage> [slippageBps]` | **Write — real funds.** Build + send an open to the ER. |
+| `flash/close-position` | `<target> <side> [slippageBps]` | **Write — real funds.** Build + send a full close to the ER. |
+
+```bash
+npm run script flash/markets
+npm run script flash/quote SOL long 1 2
+npm run script flash/positions <yourWallet>
+# writes (need KEYPAIR_PATH + a funded, ER-delegated basket):
+npm run script flash/open-position SOL long 1 2
+```
+
 ### Anatomy of a script
 
 Each feature lives in `scripts/<module>/<feature>.ts` and exports:
@@ -117,8 +138,8 @@ export default async function run(ctx: Context, args: string[]): Promise<void>;
 ```
 
 The shared `ctx` (`scripts/lib/context.ts`) provides `connection`, `jupiter`,
-and a lazy `wallet()`. Adding a feature is just a new file with these two exports
-— the dispatcher discovers it automatically.
+a lazy `wallet()`, and `flash(keypair?)` for a Flash client. Adding a feature is
+just a new file with these two exports — the dispatcher discovers it automatically.
 
 ### Writes (coming next)
 

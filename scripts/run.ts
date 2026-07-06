@@ -30,6 +30,8 @@ const SMOKE_SET = [
   'jupiter/trending',
   'meteora/active-bin',
   'meteora/positions',
+  'flash/markets',
+  'flash/quote',
 ];
 
 interface LoadedScript {

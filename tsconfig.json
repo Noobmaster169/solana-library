@@ -19,7 +19,8 @@
     "paths": {
       "@solana": ["src/solana/index.ts"],
       "@jupiter": ["src/jupiter/index.ts"],
-      "@meteora": ["src/meteora/index.ts"]
+      "@meteora": ["src/meteora/index.ts"],
+      "@flash": ["src/flash/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "scripts/**/*.ts"]

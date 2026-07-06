@@ -14,12 +14,19 @@ import { Connection, Keypair } from '@solana/web3.js';
 import bs58 from 'bs58';
 import { createConnection } from '@solana';
 import { createJupiterClient, type JupiterClient } from '@jupiter';
+import { createFlashClient, type FlashClient } from '@flash';
 
 export interface Context {
   /** Live RPC connection (SOLANA_RPC, else public mainnet-beta). */
   connection: Connection;
   /** Jupiter API client (free host unless JUPITER_API_KEY is set). */
   jupiter: JupiterClient;
+  /**
+   * A Flash Trade V2 client over the base connection + ER endpoint (FLASH_ER_RPC,
+   * else the mainnet MagicBlock endpoint). Read-only unless a `keypair` is
+   * passed — write scripts call `ctx.flash(ctx.wallet())`.
+   */
+  flash(keypair?: Keypair): FlashClient;
   /**
    * The signing wallet, loaded on first call from the keypair file at
    * KEYPAIR_PATH. Throws a clear error if unset/unreadable — reads never call
@@ -59,9 +66,14 @@ function loadKeypair(): Keypair {
 
 export function createContext(): Context {
   let cached: Keypair | undefined;
+  const connection = createConnection();
+  const erRpc = process.env['FLASH_ER_RPC']?.trim() || undefined;
   return {
-    connection: createConnection(),
+    connection,
     jupiter: createJupiterClient(),
+    flash(keypair?: Keypair): FlashClient {
+      return createFlashClient({ connection, erRpc, keypair });
+    },
     wallet() {
       return (cached ??= loadKeypair());
     },
