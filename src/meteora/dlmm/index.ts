@@ -18,7 +18,10 @@ export {
 // Namespaced surfaces. `api` and `tx` will sit alongside `accounts` here.
 export * as accounts from './accounts';
 // export * as api from './api'; // coming soon
-// export * as tx from './tx';   // coming soon
+export * as tx from './tx';
+
+// Convenience: the write helpers are also re-exported flat.
+export * from './tx';
 
 // Convenience: the core read functions are also re-exported flat, so
 // `import { getLbPair } from 'meteora-library'` works directly.
