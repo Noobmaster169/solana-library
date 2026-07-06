@@ -19,3 +19,10 @@ export * from './dlmm';
 
 // The same surface as a namespace, for callers who prefer `dlmm.accounts.*`.
 export * as dlmm from './dlmm';
+
+// Client handle for the write (tx) layer.
+export {
+  createMeteoraClient,
+  type MeteoraClient,
+  type MeteoraClientOptions,
+} from './client/client';
