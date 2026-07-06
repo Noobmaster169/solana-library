@@ -79,3 +79,7 @@ export { promiseTimeout } from './utils/promiseTimeout';
 export { runInBatch } from './utils/runInBatch';
 export { runInParallel } from './utils/runInParallel';
 export { createTtlCache, type TtlCache } from './utils/ttlCache';
+export {
+  createKeyedTtlCache,
+  type KeyedTtlCache,
+} from './utils/keyedTtlCache';

@@ -1,9 +1,10 @@
 import { Transaction } from '@solana/web3.js';
 import BN from 'bn.js';
-import DLMM, { getTokenProgramId } from '@meteora-ag/dlmm';
+import { getTokenProgramId } from '@meteora-ag/dlmm';
 import { getJupiterSwapInstruction } from '@meteora-ag/zap-sdk';
 import type { MeteoraClient } from '../../client/client';
 import { resolveZapOutRoute } from './route';
+import { getPool, withDlmmCache } from './poolCache';
 import type { BundleTx, CloseDlmmPositionParams, DlmmZapBundle } from './types';
 
 /**
@@ -11,7 +12,14 @@ import type { BundleTx, CloseDlmmPositionParams, DlmmZapBundle } from './types';
  * then zap the withdrawn tokens into a single `outputMint` — through the DLMM
  * pool or Jupiter, whichever gives more. Returns an unsigned ordered bundle.
  */
-export async function closeDlmmPosition(
+export function closeDlmmPosition(
+  client: MeteoraClient,
+  params: CloseDlmmPositionParams
+): Promise<DlmmZapBundle> {
+  return withDlmmCache(() => closeDlmmPositionInner(client, params));
+}
+
+async function closeDlmmPositionInner(
   client: MeteoraClient,
   params: CloseDlmmPositionParams
 ): Promise<DlmmZapBundle> {
@@ -27,7 +35,7 @@ export async function closeDlmmPosition(
     throw new Error('closeDlmmPosition requires `user` (or `owner`).');
   }
 
-  const dlmm = await DLMM.create(client.connection, lbPair);
+  const dlmm = await getPool(client.connection, lbPair);
 
   // The pool side we zap FROM is whichever mint is not the requested output.
   const inputMint = dlmm.lbPair.tokenXMint.equals(outputMint)

@@ -6,6 +6,7 @@ import {
 } from '@meteora-ag/zap-sdk';
 import type { MeteoraClient } from '../../client/client';
 import { resolveOpenRoute } from './route';
+import { withDlmmCache } from './poolCache';
 import type { BundleTx, DlmmZapBundle, OpenDlmmPositionParams } from './types';
 
 /**
@@ -14,7 +15,14 @@ import type { BundleTx, DlmmZapBundle, OpenDlmmPositionParams } from './types';
  * `route: 'jupiter'`), then opens a fresh position. Returns an ordered,
  * unsigned bundle plus the generated position keypair to co-sign.
  */
-export async function openDlmmPosition(
+export function openDlmmPosition(
+  client: MeteoraClient,
+  params: OpenDlmmPositionParams
+): Promise<DlmmZapBundle> {
+  return withDlmmCache(() => openDlmmPositionInner(client, params));
+}
+
+async function openDlmmPositionInner(
   client: MeteoraClient,
   params: OpenDlmmPositionParams
 ): Promise<DlmmZapBundle> {

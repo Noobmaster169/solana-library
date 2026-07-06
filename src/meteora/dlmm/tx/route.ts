@@ -1,8 +1,8 @@
 import { PublicKey } from '@solana/web3.js';
 import BN from 'bn.js';
-import DLMM from '@meteora-ag/dlmm';
 import { getJupiterQuote, type JupiterQuoteResponse } from '@meteora-ag/zap-sdk';
 import type { MeteoraClient } from '../../client/client';
+import { getPool } from './poolCache';
 import type { RoutePreference, ZapRoute } from './types';
 
 /**
@@ -16,7 +16,7 @@ export async function resolveOpenRoute(
   pref: RoutePreference
 ): Promise<ZapRoute> {
   if (pref === 'dlmm' || pref === 'jupiter') return pref;
-  const dlmm = await DLMM.create(client.connection, lbPair);
+  const dlmm = await getPool(client.connection, lbPair);
   const isSide =
     inputMint.equals(dlmm.lbPair.tokenXMint) ||
     inputMint.equals(dlmm.lbPair.tokenYMint);
@@ -37,7 +37,7 @@ export async function resolveZapOutRoute(
   slippageBps: number,
   pref: RoutePreference
 ): Promise<{ route: ZapRoute; jupiterQuote: JupiterQuoteResponse | null }> {
-  const dlmm = await DLMM.create(client.connection, lbPair);
+  const dlmm = await getPool(client.connection, lbPair);
   const swapForY = inputMint.equals(dlmm.lbPair.tokenXMint);
 
   // getJupiterQuote positional args:

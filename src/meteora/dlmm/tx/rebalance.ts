@@ -1,6 +1,7 @@
 import { StrategyType } from '@meteora-ag/dlmm';
 import { estimateDlmmRebalanceSwap } from '@meteora-ag/zap-sdk';
 import type { MeteoraClient } from '../../client/client';
+import { withDlmmCache } from './poolCache';
 import type {
   BundleTx,
   DlmmZapBundle,
@@ -12,7 +13,14 @@ import type {
  * and zap back into a new bin range. Operates on the given `position` (no new
  * position NFT is minted). Returns an unsigned ordered bundle.
  */
-export async function rebalanceDlmmPosition(
+export function rebalanceDlmmPosition(
+  client: MeteoraClient,
+  params: RebalanceDlmmPositionParams
+): Promise<DlmmZapBundle> {
+  return withDlmmCache(() => rebalanceDlmmPositionInner(client, params));
+}
+
+async function rebalanceDlmmPositionInner(
   client: MeteoraClient,
   params: RebalanceDlmmPositionParams
 ): Promise<DlmmZapBundle> {
