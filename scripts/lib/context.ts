@@ -15,6 +15,7 @@ import bs58 from 'bs58';
 import { createConnection } from '@solana';
 import { createJupiterClient, type JupiterClient } from '@jupiter';
 import { createFlashClient, type FlashClient } from '@flash';
+import { createMeteoraClient, type MeteoraClient } from '@meteora';
 
 export interface Context {
   /** Live RPC connection (SOLANA_RPC, else public mainnet-beta). */
@@ -27,6 +28,8 @@ export interface Context {
    * passed — write scripts call `ctx.flash(ctx.wallet())`.
    */
   flash(keypair?: Keypair): FlashClient;
+  /** A read-only Meteora client over the base connection + JUPITER_API_KEY. */
+  meteora(): MeteoraClient;
   /**
    * The signing wallet, loaded on first call from the keypair file at
    * KEYPAIR_PATH. Throws a clear error if unset/unreadable — reads never call
@@ -73,6 +76,12 @@ export function createContext(): Context {
     jupiter: createJupiterClient(),
     flash(keypair?: Keypair): FlashClient {
       return createFlashClient({ connection, erRpc, keypair });
+    },
+    meteora(): MeteoraClient {
+      return createMeteoraClient({
+        connection,
+        jupiterApiKey: process.env['JUPITER_API_KEY']?.trim() || '',
+      });
     },
     wallet() {
       return (cached ??= loadKeypair());

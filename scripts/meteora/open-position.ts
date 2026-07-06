@@ -1,39 +1,38 @@
-// meteora/open-position — WRITE script template (not yet implemented).
-//
-// This is the placeholder the "test opening a position" goal points at. It
-// shows the intended shape of a write script — load the signing wallet, build
-// the instruction, sign, send, confirm — but the Meteora DLMM `tx/` layer that
-// builds the add-liquidity instruction is a follow-up (see src/meteora/dlmm/tx).
-//
-//   npm run script meteora/open-position [lbPair]
+// meteora/open-position — build + simulate a DLMM zap-in bundle (no send).
+//   npm run script meteora/open-position <lbPair> <inputMint> <amount> <user>
 /* eslint-disable no-console */
+import { PublicKey } from '@solana/web3.js';
+import BN from 'bn.js';
+import { openDlmmPosition } from '@meteora';
+import { simulateBundle } from '../lib/simulate';
 import type { Context } from '../lib/context';
 
-const DEFAULT_LBPAIR = '5rCf1DM8LjKTw4YqhnoLcngyZYeNnQqztScTogYHAS6';
-
 export const meta = {
-  summary: 'open a DLMM position (WRITE — not yet implemented)',
+  summary: 'build + simulate a DLMM open-position (zap-in) bundle',
   params: [
-    { name: '[lbPair]', desc: 'DLMM pool to open a position in (default: a SOL/USDC pool)' },
+    { name: '<lbPair>', desc: 'required — DLMM pool address' },
+    { name: '<inputMint>', desc: 'required — single input token mint' },
+    { name: '<amount>', desc: 'required — input amount in base units' },
+    { name: '<user>', desc: 'required — wallet that would own the position' },
   ],
 };
 
 export default async function run(ctx: Context, args: string[]): Promise<void> {
-  const lbPair = args[0] ?? DEFAULT_LBPAIR;
-
-  // Loading the wallet up front confirms the write path is wired: this throws a
-  // clear error if PRIVATE_KEY is unset, exactly as a real write script would.
-  const wallet = ctx.wallet();
-  console.log(`  signer: ${wallet.publicKey.toBase58()}`);
-  console.log(`  pool:   ${lbPair}`);
-
-  // TODO (follow-up: src/meteora/dlmm/tx/):
-  //   1. const pool = await getLbPair(ctx.connection, lbPair)
-  //   2. const { ixs, positionKeypair } = buildAddLiquidity({ pool, owner: wallet.publicKey, amounts, binRange })
-  //   3. const tx = new Transaction().add(...ixs)
-  //   4. await sendAndConfirmTransaction(ctx.connection, tx, [wallet, positionKeypair])
-  throw new Error(
-    'not implemented — the Meteora DLMM tx layer (add-liquidity builder) is a ' +
-      'follow-up. The read scripts and wallet wiring are ready; see the TODO above.'
-  );
+  const [lbPair, inputMint, amount, user] = args;
+  if (!lbPair || !inputMint || !amount || !user) {
+    console.log(
+      '  skipped — usage: npm run script meteora/open-position <lbPair> <inputMint> <amount> <user>'
+    );
+    return;
+  }
+  const client = ctx.meteora();
+  const bundle = await openDlmmPosition(client, {
+    lbPair: new PublicKey(lbPair),
+    inputMint: new PublicKey(inputMint),
+    amount: new BN(amount),
+    user: new PublicKey(user),
+    minDeltaId: -34,
+    maxDeltaId: 34,
+  });
+  await simulateBundle(client.connection, bundle, new PublicKey(user));
 }
