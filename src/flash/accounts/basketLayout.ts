@@ -2,10 +2,8 @@ import { PublicKey } from '@solana/web3.js';
 import BigNumber from 'bignumber.js';
 import { BufferReader } from '@solana';
 
-// ---------------------------------------------------------------------------
 // On-chain Flash Trade V2 `Basket` layout, transcribed field-for-field from the
-// program IDL and decoded with solana-library's BufferReader — no Anchor, no
-// SDK coder. A Basket holds every position and order for one owner:
+// program IDL and decoded with BufferReader — no Anchor/SDK coder. Layout:
 //
 //   owner            pubkey
 //   delegate         pubkey
@@ -18,9 +16,7 @@ import { BufferReader } from '@solana';
 //   positions        Vec<PositionMeta>  (market pubkey + Position = 272 bytes)
 //   orders           Vec<OrderMeta>     (dynamic — not needed for positions)
 //
-// Wide integers decode to BigNumber; the two Ledger vecs are skipped by length
-// to reach positions without decoding balances we don't surface.
-// ---------------------------------------------------------------------------
+// The two Ledger vecs are skipped by length to reach positions.
 
 /** Anchor 8-byte account discriminator for `Basket` (sha256("account:Basket")[..8]). */
 export const BASKET_DISCRIMINATOR = Buffer.from([
@@ -79,7 +75,10 @@ export interface BasketRaw {
 }
 
 function readOraclePrice(r: BufferReader): OraclePriceRaw {
-  return { price: r.u64(), exponent: r.i32() };
+  return { 
+    price: r.u64(), 
+    exponent: r.i32() 
+  };
 }
 
 function readPosition(r: BufferReader): PositionRaw {

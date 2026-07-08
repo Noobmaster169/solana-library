@@ -1,15 +1,10 @@
 import { BN } from '@coral-xyz/anchor';
 import type { InstructionResult } from '@flash_trade/flash-sdk-v2';
-import type { FlashClient } from '../client/client';
-import { fetchMarkPrice, resolveTrade } from './common';
+import type { FlashClient } from '../client/createFlashClient';
+import { fetchMarkPrice, resolveTrade } from './tradeResolution';
 
-// ---------------------------------------------------------------------------
-// Close a position fully (use decreasePositionSize for partials).
-//
-// Needs a slippage-bounded exit price: we read the current mark from a nominal
-// quote, then bound it for the exit side. `collateralSymbol` passed to the SDK
-// is the market's lock custody; the payout token is `receivingSymbol`.
-// ---------------------------------------------------------------------------
+// Close a position fully (use buildDecreaseSize for partials). Reads the current
+// mark from a nominal quote and bounds it for the exit side.
 
 export interface ClosePositionParams {
   targetSymbol: string;

@@ -1,17 +1,9 @@
 import { PublicKey } from '@solana/web3.js';
 import BigNumber from 'bignumber.js';
-import { getMarkets, type FlashMarket } from '../../markets';
-import {
-  BASKET_SEED,
-  DEFAULT_CLUSTER,
-  DEFAULT_POOL_NAME,
-  PROGRAM_ID,
-  type Cluster,
-} from '../../constants';
+import { getAvailableMarkets, type FlashMarket } from '../../markets';
+import { BASKET_SEED, DEFAULT_CLUSTER, PROGRAM_ID, type Cluster } from '../../constants';
 
-// ---------------------------------------------------------------------------
 // PDA derivation + small decode helpers for the on-chain read path — no SDK.
-// ---------------------------------------------------------------------------
 
 /** The per-owner Basket PDA (`['basket', owner]`), holding all positions + orders. */
 export function deriveBasketAddress(
@@ -30,13 +22,13 @@ export function toPublicKey(value: string | PublicKey): PublicKey {
   return typeof value === 'string' ? new PublicKey(value) : value;
 }
 
-/** Look up normalized market metadata by its on-chain market account. */
+/** Look up normalized market metadata by on-chain market account. Spans every pool unless `poolName` is pinned. */
 export function marketByAccount(
   cluster: Cluster = DEFAULT_CLUSTER,
-  poolName: string = DEFAULT_POOL_NAME
+  poolName?: string
 ): Map<string, FlashMarket> {
   const map = new Map<string, FlashMarket>();
-  for (const m of getMarkets(cluster, poolName)) map.set(m.marketAccount.toBase58(), m);
+  for (const m of getAvailableMarkets(cluster, poolName)) map.set(m.marketAccount.toBase58(), m);
   return map;
 }
 

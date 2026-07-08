@@ -9,19 +9,9 @@ import {
   type Cluster,
 } from '../constants';
 
-// ---------------------------------------------------------------------------
-// FlashClient — the one handle the rest of the module builds on.
-//
-// It holds the two connections Flash needs (base layer for setup/delegation,
-// ER validator for positions/orders/trades) and lazily constructs the official
-// `FlashPerpetualsClient` on first use. Market/token metadata reads never touch
-// this (they come from the bundled pool registry); only Basket reads, views,
-// and writes do — so a caller listing markets pays no SDK/RPC cost.
-//
-// Read-only by default: with no keypair it signs nothing and uses an ephemeral
-// wallet, which is all account fetches and view simulations need. Pass a
-// keypair to enable the write path.
-// ---------------------------------------------------------------------------
+// FlashClient — holds the two connections Flash needs (base layer + ER
+// validator) and lazily builds the official `FlashPerpetualsClient` on first
+// use. Read-only by default (ephemeral wallet); pass a keypair to enable writes.
 
 export interface FlashClientOptions {
   /** Base-layer RPC connection. Defaults to `createConnection()` (SOLANA_RPC). */

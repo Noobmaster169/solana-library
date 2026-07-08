@@ -10,7 +10,7 @@ export const meta = {
   params: [
     { name: '<target>', desc: 'target symbol, e.g. SOL' },
     { name: '<side>', desc: 'long | short' },
-    { name: '<collateral>', desc: 'collateral amount in funding tokens' },
+    { name: '<collateral>', desc: 'collateral (utilized capital) in USDC — longs swap it into the lock asset' },
     { name: '<leverage>', desc: 'leverage multiple, e.g. 2' },
     { name: '[slippageBps]', desc: 'max entry slippage in bps (default 100)' },
   ],

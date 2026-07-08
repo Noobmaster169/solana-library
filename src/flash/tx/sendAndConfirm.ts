@@ -5,16 +5,10 @@ import type {
   SendErResult,
   SendTransactionOpts,
 } from '@flash_trade/flash-sdk-v2';
-import type { FlashClient } from '../client/client';
+import type { FlashClient } from '../client/createFlashClient';
 
-// ---------------------------------------------------------------------------
-// Submit builder output.
-//
-// Trade instructions (open/close/orders/collateral/size) run on the ER and are
-// signed with the owner's keypair via `sendAndConfirmEr`. Setup instructions
-// (initialize/deposit/delegate) run on the base layer via `sendAndConfirmBase`.
-// Both require a FlashClient created with a keypair — read-only clients throw.
-// ---------------------------------------------------------------------------
+// Submit builder output: trades go to the ER via `sendAndConfirmEr`, setup to
+// the base layer via `sendAndConfirmBase`. Both need a keypair — read-only throws.
 
 function requireKeypair(flash: FlashClient): Keypair {
   if (!flash.keypair) {

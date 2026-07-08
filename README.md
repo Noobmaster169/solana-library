@@ -112,19 +112,21 @@ npm run script meteora/positions <yourWallet>
 | Script | Parameters | Description |
 |---|---|---|
 | `flash/markets` | — | List Flash markets + token USD prices (no wallet). |
-| `flash/quote` | `[target] [side] [amountIn] [leverage]` | Quote opening a position: entry, liquidation, size, fees. Default: `SOL long 1 2`. |
+| `flash/assets` | `[assetClass]` | The full tradable universe across all pools, grouped by class (Crypto / US Equity / Forex / Metals / Commodities). |
+| `flash/quote` | `[target] [side] [amountIn] [leverage]` | Quote opening a position (`amountIn` = **USDC** collateral): entry, liquidation, size, fees. Default: `SOL long 1 2`. |
 | `flash/positions` | `<owner>` | **Required owner.** A wallet's open Flash positions. |
 | `flash/setup` | `<token> <amount>` | **Write — real funds.** One-time: init basket → deposit ledger → trade vault → deposit → delegate to the ER. Idempotent (re-run skips finished steps). |
 | `flash/open-position` | `<target> <side> <collateral> <leverage> [slippageBps]` | **Write — real funds.** Build + send an open to the ER. |
 | `flash/close-position` | `<target> <side> [slippageBps]` | **Write — real funds.** Build + send a full close to the ER. |
+| `flash/withdraw` | `<token> <amount>` | **Write — real funds.** Pull idle collateral back out of the basket (base layer). Needs `FLASH_FEE_PAYER_PATH` — a second funded keypair for the escrow rent. |
 
 ```bash
 npm run script flash/markets
-npm run script flash/quote SOL long 1 2
+npm run script flash/quote SOL long 100 2
 npm run script flash/positions <yourWallet>
 # writes (need KEYPAIR_PATH):
 npm run script flash/setup USDC 5              # init + deposit + delegate (once)
-npm run script flash/open-position SOL long 1 2
+npm run script flash/open-position SOL long 100 2
 ```
 
 ### Anatomy of a script

@@ -1,5 +1,5 @@
-// flash/quote — quote opening a position (fees, entry, liquidation). No wallet.
-//   npm run script flash/quote [target] [side] [amountIn] [leverage]
+// flash/open-quote — quote opening a position (fees, entry, liquidation). No wallet.
+//   npm run script flash/open-quote [target] [side] [amountIn] [leverage]
 /* eslint-disable no-console */
 import { getOpenPositionQuote } from '@flash';
 import type { Context } from '../lib/context';
@@ -9,7 +9,7 @@ export const meta = {
   params: [
     { name: '[target]', desc: 'target symbol (default SOL)' },
     { name: '[side]', desc: 'long | short (default long)' },
-    { name: '[amountIn]', desc: 'collateral amount in tokens (default 1)' },
+    { name: '[amountIn]', desc: 'collateral in USDC (default 1)' },
     { name: '[leverage]', desc: 'leverage multiple (default 2)' },
   ],
 };
@@ -20,7 +20,7 @@ export default async function run(ctx: Context, args: string[]): Promise<void> {
   const amountIn = Number(args[2] ?? '1');
   const leverage = Number(args[3] ?? '2');
 
-  console.log(`  quote: ${amountIn} ${targetSymbol} collateral @ ${leverage}x ${side}`);
+  console.log(`  quote: ${amountIn} USDC collateral on ${targetSymbol} @ ${leverage}x ${side}`);
   const q = await getOpenPositionQuote(ctx.flash(), { targetSymbol, side, amountIn, leverage });
 
   console.log(`    entry price:       $${q.entryPrice.toFixed(2)}`);

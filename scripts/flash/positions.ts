@@ -1,7 +1,7 @@
 // flash/positions — a wallet's open Flash positions (no wallet needed to read).
 //   npm run script flash/positions <owner>
 /* eslint-disable no-console */
-import { getPositions } from '@flash';
+import { getUserPositions } from '@flash';
 import type { Context } from '../lib/context';
 
 export const meta = {
@@ -19,7 +19,7 @@ export default async function run(ctx: Context, args: string[]): Promise<void> {
   }
 
   console.log(`  owner: ${owner}`);
-  const positions = await getPositions(ctx.flash(), owner);
+  const positions = await getUserPositions(ctx.flash(), owner);
   console.log(`  open positions: ${positions.length}`);
 
   for (const p of positions) {

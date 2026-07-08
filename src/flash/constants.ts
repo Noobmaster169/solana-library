@@ -1,17 +1,9 @@
 import { PublicKey } from '@solana/web3.js';
 
-// ---------------------------------------------------------------------------
 // Shared Flash Trade V2 protocol constants — hardcoded, no SDK dependency.
-//
-// Flash settles trading on a MagicBlock **ephemeral rollup (ER)**: a wallet's
-// positions/orders live in a per-owner **Basket** account that is delegated to
-// an ER validator, so anything position-related is read from (and written to)
-// the ER RPC — separate from the base `SOLANA_RPC`.
-//
-// The on-chain read path (accounts/) derives PDAs and decodes account bytes
-// itself from these constants; the SDK is only pulled in for the write/quote
-// paths where its instruction assembly and pool math are load-bearing.
-// ---------------------------------------------------------------------------
+// Trading settles on a MagicBlock ephemeral rollup (ER): per-owner Basket
+// accounts are delegated to an ER validator, read/written via the ER RPC
+// (separate from the base `SOLANA_RPC`).
 
 /** Clusters the module supports. */
 export type Cluster = 'mainnet-beta' | 'devnet';
@@ -39,3 +31,6 @@ export const DEFAULT_POOL_NAME = 'Crypto.1';
 
 /** PDA seed for the per-owner Basket account (`['basket', owner]`). */
 export const BASKET_SEED = 'basket';
+
+/** Default funding asset. USDC everywhere; override per call with `collateralSymbol` to skip the swap. */
+export const DEFAULT_COLLATERAL = 'USDC';

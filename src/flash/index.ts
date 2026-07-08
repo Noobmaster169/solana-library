@@ -1,32 +1,20 @@
-// ---------------------------------------------------------------------------
-// flash-library — a simplicity layer for Flash Trade V2 (perps) on Solana.
-//
-// A hybrid module: market/token metadata and USD prices are read the house way
-// (bundled pool registry + Jupiter, no SDK, RPC-light), while position reads,
-// quotes, and every write wrap the official `@flash_trade/flash-sdk-v2` — used
-// only where its oracle/pool math and account layouts are genuinely needed.
-//
-// Flash trades on a MagicBlock ephemeral rollup, so a `FlashClient` carries two
-// connections (base + ER). Reads need no wallet; writes take a keypair and
-// return UNSIGNED instructions for the caller to sign and send.
+// flash — a simplicity layer for Flash Trade V2 (perps) on Solana. Metadata and
+// prices read the house way (pool registry + Jupiter, no SDK); position reads,
+// quotes, and writes wrap `@flash_trade/flash-sdk-v2`. Reads need no wallet;
+// writes take a keypair and return UNSIGNED instructions to sign and send.
 //
 // Quick start:
-//   import { createFlashClient, getMarkets, getPositions } from 'flash-library';
+//   import { createFlashClient, getAvailableMarkets, getUserPositions } from 'solana-defi-library/flash';
 //   const flash = createFlashClient();
-//   const markets = getMarkets();                 // no network
-//   const positions = await getPositions(flash, owner);
-//
-// Or via namespace:
-//   import { flash } from 'solana-defi-library';
-//   flash.createFlashClient();
-// ---------------------------------------------------------------------------
+//   const markets = getAvailableMarkets();                 // no network
+//   const positions = await getUserPositions(flash, owner);
 
 // Client + protocol constants.
 export {
   createFlashClient,
   type FlashClient,
   type FlashClientOptions,
-} from './client/client';
+} from './client/createFlashClient';
 export {
   PROGRAM_ID,
   ER_ENDPOINT,
@@ -36,13 +24,12 @@ export {
   type Cluster,
 } from './constants';
 
-// Namespaced surfaces (markets/accounts/views/tx) are added below as they land.
+// Namespaced surfaces, then flat re-exports of the most-used entry points.
 export * as markets from './markets';
 export * as accounts from './accounts';
 export * as views from './views';
 export * as tx from './tx';
 
-// Convenience flat re-exports of the most-used read/write entry points.
 export * from './markets';
 export * from './accounts';
 export * from './views';

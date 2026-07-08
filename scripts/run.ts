@@ -31,7 +31,8 @@ const SMOKE_SET = [
   'meteora/active-bin',
   'meteora/positions',
   'flash/markets',
-  'flash/quote',
+  'flash/assets',
+  'flash/open-quote',
 ];
 
 interface LoadedScript {

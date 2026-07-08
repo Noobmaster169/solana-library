@@ -42,13 +42,14 @@ for positions and trades.
 
 ```ts
 import {
-  getMarkets, getTokenPrices,   // markets/ — no network (prices via Jupiter)
-  getPositions,                 // accounts/ — one ER RPC
+  getAvailableMarkets, getSupportedTokenPrices,   // markets/ — no network (prices via Jupiter)
+  getUserPositions,                 // accounts/ — one ER RPC
   getOpenPositionQuote,         // views/ — simulated
 } from 'solana-defi-library/flash';
 
-getMarkets();                                  // 27 markets, normalized
-await getPositions(flash, ownerAddress);       // open positions + leverage/PnL basis
+getAvailableMarkets();                                  // all markets, every pool + asset class
+getAvailableMarkets(cluster, 'Equity.1');               // one pool only
+await getUserPositions(flash, ownerAddress);       // open positions + leverage/PnL basis
 await getOpenPositionQuote(flash, {
   targetSymbol: 'SOL', side: 'long', amountIn: 1, leverage: 2,
 });                                             // entry, liq, size, fees
@@ -61,34 +62,64 @@ trades with `sendAndConfirmEr` (ER) and setup with `sendAndConfirmBase` (base).
 
 ```ts
 import {
-  buildInitializeBasket, buildDeposit, buildDelegateBasket, sendAndConfirmBase,
+  buildInitializeBasket, buildInitializeUserDepositLedger, buildInitTradeVault,
+  buildDeposit, buildWithdraw, buildDelegateBasket, sendAndConfirmBase,
   buildOpenPosition, buildClosePosition, sendAndConfirmEr,
 } from 'solana-defi-library/flash';
 
-// First-time setup (base layer):
+// First-time setup (base layer). The deposit ledger is needed once per owner,
+// and the trade vault once per collateral mint, before the first deposit.
 await sendAndConfirmBase(flash, await buildInitializeBasket(flash));
-await sendAndConfirmBase(flash, await buildDeposit(flash, { token: 'SOL', amount: 1 }));
+await sendAndConfirmBase(flash, await buildInitializeUserDepositLedger(flash));
+await sendAndConfirmBase(flash, await buildInitTradeVault(flash, usdcMint));
+await sendAndConfirmBase(flash, await buildDeposit(flash, { token: 'USDC', amount: 100 }));
 await sendAndConfirmBase(flash, await buildDelegateBasket(flash));
 
-// Trade (ER):
+// Withdraw idle collateral back out (base layer). `feePayer` must differ from the
+// owner — it pays the escrow rent and co-signs. A validator then settles the
+// payout; wait on the escrow PDA (findWithdrawalEscrowReceiptAddress + awaitClosed).
+await sendAndConfirmBase(
+  flash,
+  await buildWithdraw(flash, { token: 'USDC', amount: 100, feePayer: feePayer.publicKey }),
+  { additionalSigners: [feePayer] }
+);
+
+// Trade (ER): 100 USDC margin, 2x long → ~$200 SOL position (USDC swapped to JitoSOL)
 const open = await buildOpenPosition(flash, {
-  targetSymbol: 'SOL', side: 'long', collateralAmount: 1, leverage: 2, slippageBps: 100,
+  targetSymbol: 'SOL', side: 'long', collateralAmount: 100, leverage: 2, slippageBps: 100,
 });
 const { signature } = await sendAndConfirmEr(flash, open);
 ```
 
-Also available: `buildIncreaseSize` / `buildDecreaseSize`,
-`buildAddCollateral` / `buildRemoveCollateral`, and limit/trigger orders
-(`buildPlaceLimitOrder`, `buildEditLimitOrder`, `buildCancelLimitOrder`,
-`buildPlaceTriggerOrder`, `buildCancelTriggerOrder`).
+Also available: `buildIncreaseSize` / `buildDecreaseSize`, `buildAddCollateral`
+/ `buildRemoveCollateral`, and limit/trigger orders (`buildPlaceLimitOrder`,
+`buildEditLimitOrder`, `buildCancelLimitOrder`, `buildPlaceTriggerOrder`,
+`buildCancelTriggerOrder`).
 
-### The lock-custody detail
+### One universe, many pools
 
-A market's collateral (lock) custody can differ from what you fund with — SOL
-longs lock **JitoSOL**, so funding with SOL triggers a swap (`swapRequired: true`
-in the quote). `resolveTrade` handles this: you pass the target + side (+ optional
-funding `collateralSymbol`), and the right market/lock are resolved for you.
-Never hardcode the market account or collateral.
+Flash splits ~125 markets (62 assets) across pools by asset class — **Crypto**
+(Crypto.1, Governance.1, Community.*), **US Equity** (Equity.1), and **Forex /
+Metals / Commodities** (Virtual.1). Every symbol lives in exactly one pool, so
+`getAvailableMarkets()` aggregates them all and tags each with `pool` + `assetClass`, and
+`resolveTrade` auto-locates the pool from the symbol. Execution is identical
+across classes — `getOpenPositionQuote({ targetSymbol: 'TSLA', … })` and
+`{ targetSymbol: 'SOL', … }` take the same code path; only market hours differ
+(equities/forex revert when their session is closed).
+
+### Collateral is USDC by default
+
+Positions use **USDC as the utilized capital** — the amount you pass is USDC.
+Shorts hold it natively; longs **swap it into the market's lock asset** (SOL
+longs lock **JitoSOL**, equity longs lock **SPY**, gold locks **XAUt**), shown as
+`swapRequired: true` in the quote. So `{ targetSymbol:'SOL', side:'long',
+amountIn: 100, leverage: 2 }` means *100 USDC margin, 2x* — the same across every
+asset class.
+
+The lock asset is fixed by the market (never by the funding token) and resolved
+for you. To fund with the lock asset directly and **skip the swap**, pass
+`collateralSymbol` (e.g. `'JitoSOL'` for a SOL long, `'SPY'` for TSLA). Never
+hardcode the market account or collateral.
 
 ## Not included
 

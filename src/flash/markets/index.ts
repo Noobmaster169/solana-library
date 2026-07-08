@@ -1,19 +1,16 @@
-// ---------------------------------------------------------------------------
-// flash · markets — market/token metadata + USD prices.
-//
-// The house-style, SDK-free read surface: everything here reads the bundled
-// pool registry (no network) except USD prices, which reuse Jupiter.
-// ---------------------------------------------------------------------------
+// flash · markets — market/token metadata + USD prices. Reads the bundled pool
+// registry (no network); only USD prices hit the network, via Jupiter.
 
-export { getPoolConfig, sideLabel, symbolByMint } from './poolConfig';
 export {
-  getMarkets,
-  resolveMarket,
-  type FlashMarket,
-} from './markets';
-export {
-  getTokens,
-  getTokenPrices,
-  type FlashToken,
-  type TokenWithPrice,
-} from './tokens';
+  getPoolConfig,
+  getAllPoolNames,
+  assetClassOf,
+  sideLabel,
+  symbolByMint,
+  tickerByMint,
+  type AssetClass,
+} from './poolRegistry';
+export { getAvailableMarkets, type FlashMarket } from './getAvailableMarkets';
+export { findMarketBySymbol } from './findMarketBySymbol';
+export { getSupportedTokens, type FlashToken } from './getSupportedTokens';
+export { getSupportedTokenPrices, type TokenWithPrice } from './getSupportedTokenPrices';

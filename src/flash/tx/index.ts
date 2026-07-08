@@ -1,60 +1,35 @@
-// ---------------------------------------------------------------------------
-// flash · tx — write builders.
-//
-// Every builder wraps an SDK instruction builder and returns an UNSIGNED
-// `InstructionResult` ({ instructions, additionalSigners }); the caller signs
-// and submits with `sendAndConfirmEr` (trades) or `sendAndConfirmBase` (setup).
-// This keeps signing, priority fees, and session vs. direct fully in the
-// caller's hands.
-// ---------------------------------------------------------------------------
+// flash · tx — write builders. Each returns an UNSIGNED `InstructionResult`;
+// submit with `sendAndConfirmEr` (trades) or `sendAndConfirmBase` (setup).
 
 // Submit helpers.
-export { sendAndConfirmEr, sendAndConfirmBase } from './send';
+export { sendAndConfirmEr, sendAndConfirmBase } from './sendAndConfirm';
 
 // Conversion helpers (useful when composing custom instructions).
-export {
-  toSide,
-  toTokenAmount,
-  toUsdAmount,
-  usdToContractPrice,
-} from './common';
+export { toSide, toTokenAmount, toUsdAmount, usdToContractPrice } from './tradeResolution';
 
-// Account setup + funds lifecycle.
+// Account setup + delegation.
 export {
   buildInitializeBasket,
   buildInitializeUserDepositLedger,
   buildInitTradeVault,
-  buildDeposit,
   buildDelegateBasket,
-  type DepositParams,
-} from './setup';
+} from './accountSetup';
+
+// Funds movement (base layer).
+export { buildDeposit, type DepositParams } from './buildDeposit';
+export { buildWithdraw, type WithdrawParams } from './buildWithdraw';
 
 // Trading.
-export { buildOpenPosition, type OpenPositionParams } from './openPosition';
-export { buildClosePosition, type ClosePositionParams } from './closePosition';
-export {
-  buildIncreaseSize,
-  buildDecreaseSize,
-  type IncreaseSizeParams,
-  type DecreaseSizeParams,
-} from './size';
-export {
-  buildAddCollateral,
-  buildRemoveCollateral,
-  type AddCollateralParams,
-  type RemoveCollateralParams,
-} from './collateral';
+export { buildOpenPosition, type OpenPositionParams } from './buildOpenPosition';
+export { buildClosePosition, type ClosePositionParams } from './buildClosePosition';
+export { buildIncreaseSize, type IncreaseSizeParams } from './buildIncreaseSize';
+export { buildDecreaseSize, type DecreaseSizeParams } from './buildDecreaseSize';
+export { buildAddCollateral, type AddCollateralParams } from './buildAddCollateral';
+export { buildRemoveCollateral, type RemoveCollateralParams } from './buildRemoveCollateral';
 
 // Orders.
-export {
-  buildPlaceLimitOrder,
-  buildEditLimitOrder,
-  buildCancelLimitOrder,
-  buildPlaceTriggerOrder,
-  buildCancelTriggerOrder,
-  type PlaceLimitOrderParams,
-  type EditLimitOrderParams,
-  type CancelLimitOrderParams,
-  type PlaceTriggerOrderParams,
-  type CancelTriggerOrderParams,
-} from './orders';
+export { buildPlaceLimitOrder, type PlaceLimitOrderParams } from './buildPlaceLimitOrder';
+export { buildEditLimitOrder, type EditLimitOrderParams } from './buildEditLimitOrder';
+export { buildCancelLimitOrder, type CancelLimitOrderParams } from './buildCancelLimitOrder';
+export { buildPlaceTriggerOrder, type PlaceTriggerOrderParams } from './buildPlaceTriggerOrder';
+export { buildCancelTriggerOrder, type CancelTriggerOrderParams } from './buildCancelTriggerOrder';

@@ -11,7 +11,7 @@
 /* eslint-disable no-console */
 import type { InstructionResult } from '@flash_trade/flash-sdk-v2';
 import {
-  getTokens,
+  getSupportedTokens,
   buildInitializeBasket,
   buildInitializeUserDepositLedger,
   buildInitTradeVault,
@@ -56,7 +56,7 @@ export default async function run(ctx: Context, args: string[]): Promise<void> {
   const flash = ctx.flash(ctx.wallet());
   console.log(`  wallet: ${flash.wallet.toBase58()}`);
 
-  const tokenInfo = getTokens(flash.cluster).find(
+  const tokenInfo = getSupportedTokens(flash.cluster).find(
     (t) => t.symbol.toUpperCase() === token.toUpperCase()
   );
   if (!tokenInfo) {

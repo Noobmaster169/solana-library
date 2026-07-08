@@ -1,19 +1,12 @@
 import { PublicKey } from '@solana/web3.js';
-import type { FlashClient } from '../client/client';
-import { getBasket } from './getBasket';
-import { bnToNumber, marketByAccount, oraclePriceToNumber } from './helpers/derive';
+import { USD_DECIMALS } from '@flash_trade/flash-sdk-v2';
+import type { FlashClient } from '../client/createFlashClient';
+import { getUserBasket } from './getUserBasket';
+import { bnToNumber, marketByAccount, oraclePriceToNumber } from './helpers/pdaAndDecode';
 
-// ---------------------------------------------------------------------------
-// Normalized positions for a wallet.
-//
-// `getBasket` gives the raw decoded account; this turns its `positions` into
-// flat, human-readable objects (symbols, USD, leverage) using market metadata
-// already in memory — no extra RPC. PnL and liquidation price need oracle/pool
-// math and live in the `views/` layer instead.
-// ---------------------------------------------------------------------------
-
-/** Position sizes/collateral are denominated in USD with 6 decimals on-chain. */
-const USD_DECIMALS = 6;
+// Normalized positions for a wallet: turns the raw Basket into flat, human-
+// readable objects using in-memory market metadata (no extra RPC). PnL and
+// liquidation price need oracle math and live in `views/`.
 
 export interface FlashPosition {
   /** On-chain market account this position belongs to. */
@@ -38,12 +31,12 @@ export interface FlashPosition {
 }
 
 /** Every active position for `owner`, normalized. Empty array if no basket. */
-export async function getPositions(
+export async function getUserPositions(
   flash: FlashClient,
   owner: string | PublicKey,
   poolName?: string
 ): Promise<FlashPosition[]> {
-  const basket = await getBasket(flash, owner);
+  const basket = await getUserBasket(flash, owner);
   if (!basket) return [];
 
   const markets = marketByAccount(flash.cluster, poolName);
