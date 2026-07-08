@@ -18,6 +18,14 @@ export {
 // Funds movement (base layer).
 export { buildDeposit, type DepositParams } from './buildDeposit';
 export { buildWithdraw, type WithdrawParams } from './buildWithdraw';
+export {
+  deriveWithdrawalReceiptAddress,
+  isWithdrawalSettled,
+  awaitWithdrawalSettled,
+  type WithdrawalReceiptParams,
+  type WithdrawalStatus,
+  type AwaitWithdrawalOptions,
+} from './withdrawalReceipt';
 
 // Trading.
 export { buildOpenPosition, type OpenPositionParams } from './buildOpenPosition';

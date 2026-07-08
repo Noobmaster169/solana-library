@@ -10,8 +10,8 @@ import { toTokenAmount } from './tradeResolution';
 import { resolveToken } from './resolveToken';
 
 // Withdraw idle collateral back out (base layer) — the reverse of buildDeposit.
-// Opens an escrow that a validator settles; poll the escrow PDA (SDK
-// `findWithdrawalEscrowReceiptAddress` + `awaitClosed`) for the payout.
+// Opens an escrow that a validator settles; track completion with
+// `awaitWithdrawalSettled` (or a one-shot `isWithdrawalSettled`).
 
 export interface WithdrawParams {
   /** Token symbol (e.g. "USDC") or mint address. */

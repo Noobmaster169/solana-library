@@ -77,12 +77,13 @@ await sendAndConfirmBase(flash, await buildDelegateBasket(flash));
 
 // Withdraw idle collateral back out (base layer). `feePayer` must differ from the
 // owner — it pays the escrow rent and co-signs. A validator then settles the
-// payout; wait on the escrow PDA (findWithdrawalEscrowReceiptAddress + awaitClosed).
+// payout; track it with `awaitWithdrawalSettled` (a dependency-free `awaitClosed`).
 await sendAndConfirmBase(
   flash,
   await buildWithdraw(flash, { token: 'USDC', amount: 100, feePayer: feePayer.publicKey }),
   { additionalSigners: [feePayer] }
 );
+const status = await awaitWithdrawalSettled(flash, { token: 'USDC' }); // 'settled' | 'timeout'
 
 // Trade (ER): 100 USDC margin, 2x long → ~$200 SOL position (USDC swapped to JitoSOL)
 const open = await buildOpenPosition(flash, {

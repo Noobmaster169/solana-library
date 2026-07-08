@@ -32,5 +32,8 @@ export const DEFAULT_POOL_NAME = 'Crypto.1';
 /** PDA seed for the per-owner Basket account (`['basket', owner]`). */
 export const BASKET_SEED = 'basket';
 
+/** PDA seed for the per-(owner, mint) withdrawal escrow receipt account. */
+export const WITHDRAWAL_ESCROW_RECEIPT_SEED = 'withdrawal_escrow_receipt';
+
 /** Default funding asset. USDC everywhere; override per call with `collateralSymbol` to skip the swap. */
 export const DEFAULT_COLLATERAL = 'USDC';

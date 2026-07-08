@@ -3,8 +3,8 @@
 //
 // Reverses a deposit. `withdrawal_with_action` is the base-layer entry: it opens
 // an escrow and queues a validator-driven flow that moves the funds on the ER
-// AND settles them back to the owner. We fire that request and return — we do
-// NOT wait for or confirm the settle; the validator finalizes it asynchronously.
+// AND settles them back to the owner. After submitting we poll the escrow
+// receipt with `awaitWithdrawalSettled` until the validator closes it (payout landed).
 //
 // The escrow rent is paid by a SEPARATE fee-payer that MUST differ from the
 // basket owner — the delegation program rejects `owner == fee_payer`. Point
@@ -15,7 +15,7 @@ import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 import { Keypair, type Signer } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { getSupportedTokens, buildWithdraw, sendAndConfirmBase } from '@flash';
+import { getSupportedTokens, buildWithdraw, awaitWithdrawalSettled, sendAndConfirmBase } from '@flash';
 import type { Context } from '../lib/context';
 
 export const meta = {
@@ -89,8 +89,14 @@ export default async function run(ctx: Context, args: string[]): Promise<void> {
     additionalSigners: [...(built.additionalSigners as Signer[]), feePayer],
   });
   console.log(`    ✓ ${sig1}`);
+
+  // Wait for the validator to close the escrow receipt — our own awaitClosed.
+  console.log('  waiting for the validator to settle the payout …');
+  const status = await awaitWithdrawalSettled(flash, { token });
   console.log(
-    `  ✓ withdrawal requested — the validator settles the ${amount} ${tokenInfo.symbol} ` +
-      `payout asynchronously.`
+    status === 'settled'
+      ? `  ✓ settled — the ${amount} ${tokenInfo.symbol} payout has landed.`
+      : `  … still pending after the timeout; the validator settles asynchronously ` +
+          `(re-check later with isWithdrawalSettled).`
   );
 }
